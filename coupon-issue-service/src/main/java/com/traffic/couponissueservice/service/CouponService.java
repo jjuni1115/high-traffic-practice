@@ -4,10 +4,13 @@ import com.traffic.couponissueservice.entity.CouponIssueEntity;
 import com.traffic.couponissueservice.entity.CouponMasterEntity;
 import com.traffic.couponissueservice.repository.CouponIssueRepository;
 import com.traffic.couponissueservice.repository.CouponMasterRepository;
+import dto.CouponRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -48,6 +51,19 @@ public class CouponService {
 
 
         return "Coupon issued!";
+    }
+
+    @Transactional
+    public String createCoupon(CouponRequestDto couponRequestDto) {
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+        CouponMasterEntity coupon = new CouponMasterEntity();
+        coupon.setCouponName(couponRequestDto.couponName());
+        coupon.setAmount(couponRequestDto.amount());
+        LocalDate date = LocalDate.parse(couponRequestDto.expireDate(), formatter);
+        coupon.setExpireDate(date.atStartOfDay());
+        couponMasterRepository.save(coupon);
+        return "Coupon created!";
     }
 
 }

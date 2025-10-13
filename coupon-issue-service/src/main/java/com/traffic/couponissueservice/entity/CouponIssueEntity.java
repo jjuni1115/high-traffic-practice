@@ -15,7 +15,7 @@ public class CouponIssueEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "coupon_master_id", nullable = false)
-    private CouponMasterEntity CouponMaster;
+    private CouponMasterEntity couponMaster;
     private String userId;
 
 
