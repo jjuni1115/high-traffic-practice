@@ -8,7 +8,7 @@ export let options = {
 
 export default function () {
     const userId = Math.floor(Math.random() * 100000);
-    const res = http.post(`http://localhost:8080/coupon/issue/4/${userId}`);
+    const res = http.post(`http://localhost:8080/coupon/issue/5/${userId}`);
 
     check(res, {
         'status is 200': (r) => r.status === 200,
