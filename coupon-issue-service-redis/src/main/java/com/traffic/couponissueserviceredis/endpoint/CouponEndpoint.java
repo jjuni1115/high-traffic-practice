@@ -30,5 +30,14 @@ public class CouponEndpoint {
         return couponService.createCoupon(couponRequestDto);
     }
 
+    @GetMapping("/{couponId}/{userId}")
+    public ResponseEntity<String> getUserCoupon(
+            @PathVariable(value = "couponId") Long couponId,
+            @PathVariable(value = "userId") String userId){
+
+        return ResponseEntity.ok(couponService.getUserCoupon(couponId, userId));
+
+    }
+
 
 }

@@ -10,6 +10,7 @@ import com.traffic.couponissueserviceredis.repository.CouponMasterRepository;
 import com.traffic.couponissueserviceredis.repository.RedisCouponMasterRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,6 +80,23 @@ public class CouponService {
         redisCouponMasterRepository.save(redisCouponMaster);
 
         return "Coupon created!";
+    }
+
+    @Transactional(readOnly = true)
+    public String getUserCoupon(Long couponId, String userId){
+
+
+        CouponIssueEntity couponIssueEntity = couponIssueRepository.findByCouponMaster_IdAndUserId(couponId,userId);
+
+        if(couponIssueEntity==null){
+
+            return "no coupon for this user";
+
+        }
+
+        return "coupon : " + couponIssueEntity.getCouponMaster().getId() + " for user: " + couponIssueEntity.getUserId();
+
+
     }
 
 }

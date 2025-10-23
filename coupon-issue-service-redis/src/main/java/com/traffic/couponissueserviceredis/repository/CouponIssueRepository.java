@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CouponIssueRepository extends JpaRepository<CouponIssueEntity, Long> {
 
-    CouponIssueEntity findByCouponMasterAndUserId(CouponMasterEntity couponMaster, String userId);
+    CouponIssueEntity findByCouponMaster_IdAndUserId(Long couponId, String userId);
 
     Integer countByCouponMasterAndUserId(CouponMasterEntity couponMaster, String userId);
 }
