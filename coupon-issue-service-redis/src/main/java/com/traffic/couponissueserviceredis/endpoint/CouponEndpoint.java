@@ -2,6 +2,7 @@ package com.traffic.couponissueserviceredis.endpoint;
 
 
 import com.traffic.couponissueserviceredis.dto.CouponRequestDto;
+import com.traffic.couponissueserviceredis.dto.CouponResponseDto;
 import com.traffic.couponissueserviceredis.service.CouponService;
 
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,11 @@ public class CouponEndpoint {
 
         return ResponseEntity.ok(couponService.getUserCoupon(couponId, userId));
 
+    }
+
+    @GetMapping("/view/{couponId}")
+    public ResponseEntity<CouponResponseDto> viewCoupon(@PathVariable(value = "couponId") Long couponId){
+        return ResponseEntity.ok(couponService.viewCoupon(couponId));
     }
 
 

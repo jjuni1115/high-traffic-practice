@@ -1,5 +1,6 @@
-spring:
 
+
+spring:
   data:
     redis:
       host: localhost
@@ -16,3 +17,5 @@ spring:
 
   jpa:
     generate-ddl: off
+server:
+  port: 9090

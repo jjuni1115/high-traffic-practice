@@ -22,8 +22,10 @@ public class RedisSyncService {
     private final CouponMasterRepository couponMasterRepository;
     private final RedisCouponMasterRepository redisCouponMasterRepository;
 
-    @Scheduled(cron = "0 0/1 * * * ?") // 10초마다 동기화
+    @Scheduled(cron = "0 0/5 * * * ?") // 10초마다 동기화
     public void syncToDb() {
+
+        long startTime = System.nanoTime();
         Iterable<RedisCouponMaster> allCoupons =
                 redisCouponMasterRepository.findAll();
 
@@ -50,5 +52,7 @@ public class RedisSyncService {
             couponMasterRepository.save(master);
 
         }
+        long endTime = System.nanoTime();
+        log.info("Redis to DB sync completed in {} ms", (endTime - startTime) / 1_000_000);
     }
 }

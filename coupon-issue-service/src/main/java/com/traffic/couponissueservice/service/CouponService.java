@@ -1,10 +1,11 @@
 package com.traffic.couponissueservice.service;
 
+import com.traffic.couponissueservice.dto.CouponResponseDto;
 import com.traffic.couponissueservice.entity.CouponIssueEntity;
 import com.traffic.couponissueservice.entity.CouponMasterEntity;
 import com.traffic.couponissueservice.repository.CouponIssueRepository;
 import com.traffic.couponissueservice.repository.CouponMasterRepository;
-import dto.CouponRequestDto;
+import com.traffic.couponissueservice.dto.CouponRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,6 +65,25 @@ public class CouponService {
         coupon.setExpireDate(date.atStartOfDay());
         couponMasterRepository.save(coupon);
         return "Coupon created!";
+    }
+
+
+    @Transactional
+    public CouponResponseDto viewCoupon(Long couponId){
+
+        CouponMasterEntity couponMasterEntity = couponMasterRepository.findById(couponId)
+                .orElseThrow(() -> new RuntimeException("Coupon not found"));
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+        return new CouponResponseDto(
+                couponMasterEntity.getId(),
+                couponMasterEntity.getCouponName(),
+                couponMasterEntity.getAmount(),
+                formatter.format(couponMasterEntity.getExpireDate())
+        );
+
+
     }
 
 }

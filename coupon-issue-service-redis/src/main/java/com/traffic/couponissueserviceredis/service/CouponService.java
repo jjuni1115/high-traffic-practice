@@ -2,6 +2,7 @@ package com.traffic.couponissueserviceredis.service;
 
 
 import com.traffic.couponissueserviceredis.dto.CouponRequestDto;
+import com.traffic.couponissueserviceredis.dto.CouponResponseDto;
 import com.traffic.couponissueserviceredis.entity.CouponIssueEntity;
 import com.traffic.couponissueserviceredis.entity.CouponMasterEntity;
 import com.traffic.couponissueserviceredis.entity.RedisCouponMaster;
@@ -158,6 +159,22 @@ public class CouponService {
         return "coupon : " + couponIssueEntity.getCouponMaster().getId() + " for user: " + couponIssueEntity.getUserId();
 
 
+    }
+
+    @Transactional
+    public CouponResponseDto viewCoupon(Long couponId) {
+
+        CouponMasterEntity couponMasterEntity = couponMasterRepository.findById(couponId)
+                .orElseThrow(() -> new RuntimeException("Coupon not found"));
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+        return new CouponResponseDto(
+                couponMasterEntity.getId(),
+                couponMasterEntity.getCouponName(),
+                couponMasterEntity.getAmount(),
+                formatter.format(couponMasterEntity.getExpireDate())
+        );
     }
 
 }
