@@ -14,7 +14,6 @@
       </GradleProjectSettings>
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/coupon-issue-service-kafka" />
-        <option name="gradleJvm" value="corretto-17" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$/coupon-issue-service-kafka" />
@@ -26,6 +25,14 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$/coupon-issue-service-redis" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/coupon-master-service" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/coupon-master-service" />
           </set>
         </option>
       </GradleProjectSettings>

@@ -45,6 +45,8 @@ public class CouponService {
             couponIssue.setCouponMaster(coupon);
             couponIssueRepository.save(couponIssue);
 
+            couponMasterRepository.save(coupon);
+
         } finally {
             lock.unlock();
 
