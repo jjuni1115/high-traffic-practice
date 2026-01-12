@@ -11,6 +11,12 @@ spring:
 
   kafka:
     producer:
+      acks: 1
+      retries: 0
+      linger-ms: 0
+      batch-size: 16384
+      compression-type: lz4
+
       bootstrap-servers: localhost:9092
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:

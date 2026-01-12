@@ -12,6 +12,7 @@ import com.traffic.couponissueservicekafka.repository.CouponIssueRepository;
 import com.traffic.couponissueservicekafka.repository.CouponMasterRepository;
 import com.traffic.couponissueservicekafka.repository.RedisCouponMasterRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CouponService {
 
     private final CouponMasterRepository couponMasterRepository;
@@ -38,75 +40,48 @@ public class CouponService {
     private final CouponKafkaService couponKafkaService;
     private final Lock lock = new ReentrantLock();
 
-    @Transactional
     public String issueCoupon(Long couponId, String userId) throws JsonProcessingException {
 
 
-        String script = "local key = KEYS[1]\n" +
-                "local userId = ARGV[1]\n" +
-                "local issuedKey = ARGV[2]\n" +
-                "local syncKey = ARGV[3]\n" +
-                "\n" +
-                "local amountStr = redis.call('HGET', key, 'amount')\n" +
-                "if not amountStr then\n" +
-                "  return -2  -- coupon not exists\n" +
+        String script = "local stock = tonumber(redis.call('GET', KEYS[1]))\n" +
+                "if not stock or stock <= 0 then\n" +
+                "  return -1\n" +
                 "end\n" +
                 "\n" +
-                "local amount = tonumber(amountStr)\n" +
-                "if not amount then\n" +
-                "  return -3  -- amount parse error\n" +
+                "-- 중복 방지\n" +
+                "local ok = redis.call('SETNX', KEYS[2], 1)\n" +
+                "if ok == 0 then\n" +
+                "  return -2\n" +
                 "end\n" +
                 "\n" +
-                "if amount <= 0 then\n" +
-                "  return -1  -- no stock\n" +
-                "end\n" +
-                "\n" +
-                "-- 중복 발급 방지: 이미 발급된 사용자면 실패\n" +
-                "if redis.call('SISMEMBER', issuedKey, userId) == 1 then\n" +
-                "  return -4  -- already issued\n" +
-                "end\n" +
-                "\n" +
-                "-- 재고 차감\n" +
-                "redis.call('HINCRBY', key, 'amount', -1)\n" +
-                "-- 발급 기록 추가 (Set, List 등)\n" +
-                "redis.call('SADD', issuedKey, userId)\n" +
-                "redis.call('RPUSH', syncKey, userId)\n" +
-                "\n" +
-                "return amount - 1  -- 남은 수량 반환";
+                "redis.call('DECR', KEYS[1])\n" +
+                "return stock - 1";
 
+        long start = System.currentTimeMillis();
         DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
         redisScript.setScriptText(script);
         redisScript.setResultType(Long.class);
 
-        List<String> keys = Collections.singletonList("coupon_master:"+couponId);
-        List<String> args = Arrays.asList(userId, "coupon" + couponId + "issued", "coupon" + couponId + "sync");
 
-        Long result = redisTemplate.execute(redisScript, keys, args.toArray());
+        String stockKey = "coupon:" + couponId + ":stock";
+        String userKey = "coupon:" + couponId + ":user:" + userId;
 
-        if(result == null){
-            return "server error";
-        } else if (result == -2L){
-            return "Coupon does not exist";
-        } else if(result == -1L){
-            return"No coupons left to issue";
-        } else if (result == -4L){
-            return "Coupon already issued to this user";
-        }else if(result>0){
+        Long result = redisTemplate.execute(redisScript, List.of(stockKey, userKey));
+        log.info("redis lua took = {}ms", System.currentTimeMillis() - start);
 
-            //kafka로 발급 내역 전송
-            KafkaCounponDto kafkaCounponDto = KafkaCounponDto.builder()
-                    .couponId(couponId)
-                    .userId(userId)
-                    .build();
+        if (result == null) return "server error";
+        if (result == -1) return "No stock";
+        if (result == -2) return "Already issued";
 
-            couponKafkaService.sendCouponIssue(kafkaCounponDto);
-            return "Coupon issued!";
-        }
+        //kafka로 발급 내역 전송
+        KafkaCounponDto kafkaCounponDto = KafkaCounponDto.builder()
+                .couponId(couponId)
+                .userId(userId)
+                .build();
 
+        couponKafkaService.sendCouponIssue(kafkaCounponDto);
+        return "Coupon issued!";
 
-
-
-        return "";
 
 
     }
@@ -123,7 +98,6 @@ public class CouponService {
         couponMasterRepository.save(coupon);
 
 
-
         //redis 저장
         RedisCouponMaster redisCouponMaster = new RedisCouponMaster();
         redisCouponMaster.setCouponName(couponRequestDto.couponName());
@@ -133,16 +107,20 @@ public class CouponService {
 
         redisCouponMasterRepository.save(redisCouponMaster);
 
+        String stockKey = "coupon:" + coupon.getId() + ":stock";
+        redisTemplate.opsForValue()
+                .set(stockKey, String.valueOf(couponRequestDto.amount()));
+
         return "Coupon created!";
     }
 
     @Transactional(readOnly = true)
-    public String getUserCoupon(Long couponId, String userId){
+    public String getUserCoupon(Long couponId, String userId) {
 
 
-        CouponIssueEntity couponIssueEntity = couponIssueRepository.findByCouponMaster_IdAndUserId(couponId,userId);
+        CouponIssueEntity couponIssueEntity = couponIssueRepository.findByCouponMaster_IdAndUserId(couponId, userId);
 
-        if(couponIssueEntity==null){
+        if (couponIssueEntity == null) {
 
             return "no coupon for this user";
 
